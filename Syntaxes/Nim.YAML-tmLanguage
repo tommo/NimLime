@@ -41,6 +41,37 @@ patterns:
       end: \`
     - {include: source.asm}
 
+- comment: A  short nim type
+  name: meta.type.nim
+  match: ^\s*(type)\s+([\w\x{80}-\x{10FFFF}]+)\s*(\*)?\s*(\[[^]]\])?\s*(=)\s*(\w+) #(\s+(.*))?
+  captures:
+    '1': {name: keyword.language.nim}
+    '2': {name: entity.name.type.nim}
+    '3': {name: keyword.operator.export.nim}
+    '4': {name: control.variable.parameter.nim}
+    '5': {name: keyword.operator.nim}
+    '6': {name: keyword.other.nim}
+- comment: A nim type section
+  name: meta.type.nim
+  begin: ^(\s*)(type)\s*$
+  end: ^(?!(\1\s+|\s*$))
+  beginCaptures:
+    '2': {name: keyword.language.nim}
+  patterns:
+  - comment: object
+    match: ([\w\x{80}-\x{10FFFF}]+)\s*(\*)?\s*({\..*\.})?\s*(\[[^]]\])?\s*(=)\s*(\w+(\s+of\s+(\w+))?)
+    captures:
+      '1': {name: entity.name.type.nim}
+      '2': {name: keyword.operator.export.nim}
+      '3': {name: entity.other.pragma.nim}
+      '4': {name: control.variable.parameter.nim}
+      '5': {name: keyword.operator.nim}
+      '6': {name: keyword.other.nim}
+      '7': {name: keyword.operator.nim}
+      '8': {name: support.type.nim}
+      # '6': {name: support.type.nim}
+  - {include: source.nim}
+
 - comment: A nim procedure or method declaration
   name: meta.proc.nim
   patterns:
@@ -49,7 +80,7 @@ patterns:
     beginCaptures:
       '1': {name: storage.type.proc.nim}
       '2': {name: entity.name.function.nim}
-      '5': {name: keyword.operator.secondary.kw-public.nim}
+      '5': {name: keyword.operator.export.nim}
 
     endCaptures:
       '1': {name: keyword.operator.nim}
@@ -59,24 +90,26 @@ patterns:
       - comment: Pattern
         begin: \{
         end: \}
+        name: entity.other.pragma.nim
         patterns:
         - name: string.something.nim
           begin: \"
           end: \"
-        - name: entity.other.attribute-name.pattern.nim
+        - name: entity.other.pragma.nim
           match: ([\w\x{80}-\x{10FFFF}]+)
       - comment: Parameters
-        begin: \(
-        end: \)
+        begin: (?=\()
+        end: (?=\))
         patterns:
         - comment: Pattern
           begin: \{
           end: \}
+          name: entity.other.pragma.nim
           patterns:
           - name: string.something.nim
             begin: \"
             end: \"
-          - name: entity.other.attribute-name.pattern.nim
+          - name: entity.other.pragma.nim
             match: ([\[\]\w\x{80}-\x{10FFFF}]+)
         - {include: source.nim}
       - {include: source.nim}
@@ -84,12 +117,12 @@ patterns:
 - comment: Pragmas
   begin: \{\.
   end: \.?\}
-  name: pragma
+  name: entity.other.pragma.nim
   patterns:
   - begin: \"
     end: \"
     name: string.something.nim
-  - name: entity.other.attribute-name.pragma.nim
+  - name: entity.other.pragma.nim
     match: ([\w\x{80}-\x{10FFFF}]+)
 
 - comment: A discarded triple string literal comment
@@ -122,27 +155,28 @@ patterns:
   match: (?<![\w\x{80}-\x{10FFFF}])(true|false|inf|nil)(?![\w\x{80}-\x{10FFFF}])
 
 - comment: Primary branching keywords
-  begin: (?:^|\s+|=)(when|if)\b
+  begin: (?:^|\s+|=)((when)|(if))\b
   end: (?=:)
   captures:
-    '1': {name: keyword.control.primary.nim}
+    '2': {name: keyword.preprocessor.nim}
+    '3': {name: keyword.control.primary.nim}
   endCaptures:
     '1': {name: control.variable.parameter.nim}
   patterns:
   - {include: source.nim}
 
-- comment: Primary branching keyword 'case'
-  begin: (?:^|\s+|=)(case)\b
-  end: (?=\bof\b)
-  captures:
-    '1': {name: keyword.control.primary.nim}
-  endCaptures:
-    '1': {name: control.variable.parameter.nim}
-  patterns:
-  - {include: source.nim}
+# - comment: Primary branching keyword 'case'
+#   begin: (?:^|\s+|=)(case)\b
+#   end: (?=\bof\b)
+#   captures:
+#     '1': {name: keyword.control.primary.nim}
+#   endCaptures:
+#     '1': {name: control.variable.parameter.nim}
+#   patterns:
+#   - {include: source.nim}
 
 - comment: Secondary branching keywords and their conditions
-  begin: (?:^|\s+)(of|else|elif)\b
+  begin: (?:^|\s+)(case|of|else|elif)\b
   end: (?=:)
   captures:
     '1': {name: keyword.control.secondary.nim}
@@ -158,7 +192,11 @@ patterns:
 
 - comment: Keyword boolean operators for expressions.
   name: keyword.operator.boolean.nim
-  match: ((?<![\w\x{80}-\x{10FFFF}])(and|in|is|isnot|not|notin|or|xor)(?![\w\x{80}-\x{10FFFF}]))
+  match: ((?<![\w\x{80}-\x{10FFFF}])(and|in|is|isnot|not|notin|or|xor|mod)(?![\w\x{80}-\x{10FFFF}]))
+
+- comment: Other keywords.
+  name: keyword.preprocessor.nim
+  match: ((?<![\w\x{80}-\x{10FFFF}])(import|export|include)(?![\w\x{80}-\x{10FFFF}]))
 
 - comment: Other keywords.
   name: keyword.other.nim
@@ -271,6 +309,11 @@ patterns:
 
 - comment: Command syntax
   match: ([\w\x{80}-\x{10FFFF}]+)(?=\s+[\w](?![\w\x{80}-\x{10FFFF}]+((?!\n)\s)+))
+  captures:
+    '1': { name: support.function.any-method.nim }
+  patterns:
+    - {include: source.nim}
+- match: (^\s*[\w\x{80}-\x{10FFFF}]+)(?=\s*:)
   captures:
     '1': { name: support.function.any-method.nim }
   patterns:
@@ -538,6 +581,8 @@ patterns:
     - match: (?<!\$)(\$[a-zA-Z0-9_]+)
       name: keyword.operator.nim
     - {include: text.html.markdown.multimarkdown}
+  - name: keyword.operator.other.nim
+    match: ([(),\[\]{}])
 
 repository:
   escaped_char:
